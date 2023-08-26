@@ -1,0 +1,70 @@
+#include<bits/stdc++.h>
+using namespace std;
+
+class SegTree{
+    vector<int>seg;
+public:
+    // Segment Tree Constructor
+    // initialization with size 4* size of given array
+    SegTree(int siz){
+        seg.resize(4*siz + 1);
+    }
+    // Building the segment tree from the array
+    void buildTree(int idx, int low, int high, vector<int>&arr){
+        if(low == high){
+            seg[idx]= arr[low];
+            return;
+        }
+        int mid = low + (high - low)/2;
+        // call to build left subtree
+        buildTree(2*idx+1, low, mid, arr);
+        // call to build right subtree
+        buildTree(2*idx+2, mid+1, high, arr);
+        // update the tree node value
+        seg[idx]= min(seg[2*idx+1], seg[2*idx+2]);
+    }
+    // query function to make a range query
+    int query(int idx, int low, int high, int left, int right){
+        // no overlap case
+        if(low>right || high<left)return INT_MAX;
+        // complete overlap case
+        else if(low>=left && high<=right)return seg[idx];
+        // partial overlap case
+        else{
+            int mid = low + (high - low)/2;
+            int leftResult = query(2*idx+1, low, mid, left, right);
+            int rightResult = query(2*idx+2, mid+1, high, left, right);
+            return min(leftResult, rightResult);
+        }
+    }
+    // update function to perform the point update of values
+    void update(int idx, int i, int val, int low, int high){
+        if(low == high){
+            seg[idx]= val;
+            return;
+        }
+        int mid = low + (high - low)/2;
+        if(i<=mid)update(2*idx+1, i, val, low, mid);
+        else update(2*idx+2, i, val, mid+1, high);
+        seg[idx]= min(seg[2*idx+1], seg[2*idx+2]);
+    }
+};
+
+int main(){
+    int n;
+    cin>>n;
+    vector<int>arr(n);
+    for(int i = 0; i< n; i++)cin>>arr[i];
+    SegTree sg1(n);
+    sg1.buildTree(0, 0, n-1, arr);
+    int q;
+    cin>>q;
+    while(q--){
+        int left;
+        int right;
+        cin>>left>>right;
+        // min value element in the range
+        cout<<sg1.query(0, 0, n-1,left, right)<<endl;
+    }
+    return 0;
+}
