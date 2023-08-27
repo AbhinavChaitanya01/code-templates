@@ -1,0 +1,112 @@
+// Seg Tree with Lazy propagation
+// For the case when whole range is updated
+#include<bits/stdc++.h>
+using namespace std;
+class SegTree{
+    vector<int>seg, lazy;
+public:
+    SegTree(int siz){
+        seg.resize(4*siz+1);
+        lazy.resize(4*siz+1);
+    }
+    // building Tree Operation --> O(n)
+    void buildTree(int idx, int low, int high, vector<int>&arr){
+        if(low == high){
+            seg[idx] = arr[low];
+            return;
+        }
+        int mid = low + (high - low)/2;
+        buildTree(2*idx+1, low, mid, arr);
+        buildTree(2*idx+2, mid+1, high, arr);
+        seg[idx]= seg[2*idx+1] + seg[2*idx+2];
+    }
+    // update operation in range and not point updates
+    void update(int idx, int low, int high, int left, int right, int val){
+        // update the previous remianing updates
+        // and propagate downwards
+        if(lazy[idx]!=0){
+            seg[idx] += (high - low + 1)*lazy[idx];
+            // propagate downwards
+            if(low!= high){
+                // no leaf condition
+                lazy[2*idx+1] += lazy[idx];
+                lazy[2*idx+2] += lazy[idx];
+            }
+            lazy[idx] = 0;
+        }
+
+        // case1: no overlap --> do nothing and return
+        if(left>high || right<low){
+            return;
+        }
+        // case2: complete overlap
+        if(low>=left && high<=right){
+            seg[idx] += (high - low + 1)*val;
+            if(low!= high){
+                // no leaf condition
+                lazy[2*idx+1] += val;
+                lazy[2*idx+2] += val;
+            }
+            return;
+        }
+        // case3: partial overlap
+        int mid = (high + low)/2;
+        update(2*idx+1, low, mid, left, right, val);
+        update(2*idx+2, mid+1, high, left, right, val);
+        seg[idx] = seg[2*idx+1] + seg[2*idx+2];
+    }
+    // range query
+    int query(int idx, int low, int high, int left, int right){
+        // update if any nodes are remaining as the nodes shall remain fresh and updated
+        if(lazy[idx]!=0){
+            seg[idx] += (high - low + 1)*lazy[idx];
+            // propagate downwards
+            if(low!= high){
+                // no leaf condition
+                lazy[2*idx+1] += lazy[idx];
+                lazy[2*idx+2] += lazy[idx];
+            }
+            lazy[idx] = 0;
+        }
+        // no overlap case
+        if(low>right || high<left)return 0;
+        // complete overlap case
+        else if(low>=left && high<=right)return seg[idx];
+        // partial overlap case
+        else{
+            int mid = low + (high - low)/2;
+            int leftResult = query(2*idx+1, low, mid, left, right);
+            int rightResult = query(2*idx+2, mid+1, high, left, right);
+            return leftResult + rightResult;
+        }
+    }
+};
+int main(){
+    int n;
+    cin>>n;
+    vector<int>arr(n);
+    for(int i = 0; i< n; i++)cin>>arr[i];
+    SegTree sg1(n);
+    sg1.buildTree(0, 0, n-1, arr);
+    int q;
+    cin>>q;
+    while(q--){
+        int type; 
+        cin>>type; 
+        if(type == 1){
+            int left;
+            int right;
+            cin>>left>>right;
+            // range sum of elements in the range
+            cout<<sg1.query(0, 0, n-1,left, right)<<endl;
+        }else{
+            int left;
+            int right;
+            int val;
+            cin>>left>>right>>val;
+            // range sum of elements in the range
+            sg1.update(0, 0, n-1,left, right,val);
+        }
+    }
+    return 0;
+}
